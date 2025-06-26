@@ -201,19 +201,52 @@ class Database {
             // Парсим строку вида "Started Jun 25, 2025 4:50:53 AM, ended Jun 25, 2025 4:51:04 AM"
             preg_match('/ended\s+(.+)$/i', $dateString, $matches);
             if (!$matches) {
-                throw new Exception("Не удалось найти время окончания");
+                throw new Exception("Не удалось найти время окончания в строке: " . $dateString);
             }
             
             $endedTime = trim($matches[1]);
             
-            // Создаем объект DateTime с учетом часового пояса
+            // Создаем карту часовых поясов
             $timezoneMap = [
                 'GMT+00:00' => 'UTC',
-                'GMT+01:00' => 'Europe/London'
+                'GMT+01:00' => 'Europe/London',
+                'GMT+02:00' => 'Europe/Berlin',
+                'GMT+03:00' => 'Europe/Moscow',
+                'GMT+04:00' => 'Asia/Dubai',
+                'GMT+05:00' => 'Asia/Karachi',
+                'GMT+06:00' => 'Asia/Almaty',
+                'GMT+07:00' => 'Asia/Bangkok',
+                'GMT+08:00' => 'Asia/Shanghai',
+                'GMT+09:00' => 'Asia/Tokyo',
+                'GMT+10:00' => 'Australia/Sydney',
+                'GMT-05:00' => 'America/New_York',
+                'GMT-06:00' => 'America/Chicago',
+                'GMT-07:00' => 'America/Denver',
+                'GMT-08:00' => 'America/Los_Angeles'
             ];
             
             $tz = isset($timezoneMap[$timezone]) ? $timezoneMap[$timezone] : 'UTC';
-            $date = new DateTime($endedTime, new DateTimeZone($tz));
+            
+            // Пробуем различные форматы времени
+            $formats = [
+                'M j, Y g:i:s A',  // Jun 25, 2025 4:50:53 AM
+                'M d, Y g:i:s A',  // Jun 25, 2025 4:50:53 AM (с ведущим нулем)
+                'F j, Y g:i:s A',  // June 25, 2025 4:50:53 AM
+                'M j, Y H:i:s',    // Jun 25, 2025 16:50:53
+                'Y-m-d H:i:s',     // 2025-06-25 16:50:53
+            ];
+            
+            $date = null;
+            foreach ($formats as $format) {
+                $date = DateTime::createFromFormat($format, $endedTime, new DateTimeZone($tz));
+                if ($date !== false) {
+                    break;
+                }
+            }
+            
+            if ($date === false || $date === null) {
+                throw new Exception("Не удалось распарсить время: '" . $endedTime . "'");
+            }
             
             // Конвертируем в GMT
             $date->setTimezone(new DateTimeZone('UTC'));
