@@ -2,9 +2,10 @@
 // Получение параметров фильтрации
 $filterAccountId = isset($_GET['account_id']) ? (int)$_GET['account_id'] : null;
 $filterScriptId = isset($_GET['script_id']) ? (int)$_GET['script_id'] : null;
+$filterPlacement = isset($_GET['placement']) ? $_GET['placement'] : '';
 $filterDateFrom = isset($_GET['date_from']) ? $_GET['date_from'] : '';
 $filterDateTo = isset($_GET['date_to']) ? $_GET['date_to'] : '';
-$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 100;
+$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 500;
 $page = isset($_GET['p']) ? max(1, (int)$_GET['p']) : 1;
 $offset = ($page - 1) * $limit;
 
@@ -34,6 +35,11 @@ if ($filterScriptId) {
     $params[] = $filterScriptId;
 }
 
+if ($filterPlacement) {
+    $sql .= " AND pe.placement_url = ?";
+    $params[] = $filterPlacement;
+}
+
 if ($filterDateFrom) {
     $sql .= " AND DATE(pe.excluded_at_gmt) >= ?";
     $params[] = $filterDateFrom;
@@ -60,6 +66,17 @@ $exclusions = $db->fetchAll($sql, $params);
 // Получение списков для фильтров
 $accounts = $db->getAccounts();
 $scripts = $db->getScripts();
+
+// Получение списка плейсментов с подсчетом количества
+$placementsSql = "
+    SELECT 
+        placement_url,
+        COUNT(*) as count
+    FROM placement_exclusions 
+    GROUP BY placement_url 
+    ORDER BY count DESC, placement_url ASC
+";
+$placements = $db->fetchAll($placementsSql);
 
 // Обработка экспорта в CSV
 if (isset($_GET['export']) && $_GET['export'] === 'csv') {
@@ -142,6 +159,19 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             </div>
             
             <div class="filter-group">
+                <label for="placement">Плейсмент</label>
+                <select id="placement" name="placement">
+                    <option value="">Все плейсменты</option>
+                    <?php foreach ($placements as $placement): ?>
+                        <option value="<?php echo htmlspecialchars($placement['placement_url']); ?>" 
+                                <?php echo $filterPlacement == $placement['placement_url'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($placement['placement_url']) . ' (' . $placement['count'] . ')'; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <div class="filter-group">
                 <label for="date_from">Дата с</label>
                 <input type="date" id="date_from" name="date_from" value="<?php echo htmlspecialchars($filterDateFrom); ?>">
             </div>
@@ -154,10 +184,9 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             <div class="filter-group">
                 <label for="limit">Записей на странице</label>
                 <select id="limit" name="limit">
-                    <option value="50" <?php echo $limit == 50 ? 'selected' : ''; ?>>50</option>
-                    <option value="100" <?php echo $limit == 100 ? 'selected' : ''; ?>>100</option>
-                    <option value="200" <?php echo $limit == 200 ? 'selected' : ''; ?>>200</option>
                     <option value="500" <?php echo $limit == 500 ? 'selected' : ''; ?>>500</option>
+                    <option value="1000" <?php echo $limit == 1000 ? 'selected' : ''; ?>>1000</option>
+                    <option value="10000" <?php echo $limit == 10000 ? 'selected' : ''; ?>>10000</option>
                 </select>
             </div>
             
@@ -208,35 +237,11 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             <?php foreach ($exclusions as $exclusion): ?>
             <tr>
                 <td>
-                    <?php echo date('d.m.Y H:i', strtotime($exclusion['excluded_at_gmt'])); ?>
-                    <br>
-                    <small style="color: #666;">
-                        <?php 
-                        // Показать время в часовом поясе аккаунта
-                        $localTime = new DateTime($exclusion['excluded_at_gmt'], new DateTimeZone('UTC'));
-                        $accountTz = $exclusion['account_timezone'];
-                        $timezoneMap = [
-                            'GMT+00:00' => 'UTC',
-                            'GMT+01:00' => 'Europe/London'
-                        ];
-                        $tz = isset($timezoneMap[$accountTz]) ? $timezoneMap[$accountTz] : 'UTC';
-                        $localTime->setTimezone(new DateTimeZone($tz));
-                        echo $localTime->format('d.m.Y H:i') . ' (' . $accountTz . ')';
-                        ?>
-                    </small>
+                    <?php echo date('d.m H:i', strtotime($exclusion['excluded_at_gmt'])); ?>
                 </td>
                 <td><?php echo htmlspecialchars($exclusion['account_name']); ?></td>
                 <td>
                     <strong><?php echo htmlspecialchars($exclusion['script_name']); ?></strong>
-                    <?php if ($exclusion['script_description']): ?>
-                        <br>
-                        <small style="color: #666;">
-                            <?php 
-                            $desc = htmlspecialchars($exclusion['script_description']);
-                            echo strlen($desc) > 50 ? substr($desc, 0, 50) . '...' : $desc;
-                            ?>
-                        </small>
-                    <?php endif; ?>
                 </td>
                 <td><?php echo htmlspecialchars($exclusion['campaign_name']); ?></td>
                 <td>
@@ -322,6 +327,10 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.modal.hidden {
+    display: none !important;
 }
 
 .modal-content {
@@ -423,6 +432,26 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         hideDetails();
     }
+});
+
+// Сохранение и восстановление выбора количества записей
+document.addEventListener('DOMContentLoaded', function() {
+    const limitSelect = document.getElementById('limit');
+    
+    // Восстановление сохраненного значения при загрузке страницы
+    const savedLimit = localStorage.getItem('placements_limit');
+    if (savedLimit && !limitSelect.value) {
+        // Устанавливаем сохраненное значение только если не задано в URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.has('limit')) {
+            limitSelect.value = savedLimit;
+        }
+    }
+    
+    // Сохранение выбранного значения при изменении
+    limitSelect.addEventListener('change', function() {
+        localStorage.setItem('placements_limit', this.value);
+    });
 });
 </script>
 
