@@ -294,5 +294,60 @@ function previewPlacements() {
     // Прокрутка к предпросмотру
     previewContainer.scrollIntoView({ behavior: 'smooth' });
 }
+
+// Функциональность запоминания выбранных полей
+document.addEventListener('DOMContentLoaded', function() {
+    const accountSelect = document.getElementById('account_id');
+    const scriptSelect = document.getElementById('script_id');
+    
+    // Восстановление сохраненных значений при загрузке страницы
+    const savedAccountId = localStorage.getItem('placements_last_account_id');
+    const savedScriptId = localStorage.getItem('placements_last_script_id');
+    
+    // Восстанавливаем аккаунт только если форма не была отправлена (нет выбранного значения)
+    if (savedAccountId && !accountSelect.value) {
+        // Проверяем, что сохраненное значение все еще существует в списке
+        const accountOption = accountSelect.querySelector(`option[value="${savedAccountId}"]`);
+        if (accountOption) {
+            accountSelect.value = savedAccountId;
+        }
+    }
+    
+    // Восстанавливаем скрипт только если форма не была отправлена (нет выбранного значения)
+    if (savedScriptId && !scriptSelect.value) {
+        // Проверяем, что сохраненное значение все еще существует в списке
+        const scriptOption = scriptSelect.querySelector(`option[value="${savedScriptId}"]`);
+        if (scriptOption) {
+            scriptSelect.value = savedScriptId;
+        }
+    }
+    
+    // Сохранение выбранных значений при изменении
+    accountSelect.addEventListener('change', function() {
+        if (this.value) {
+            localStorage.setItem('placements_last_account_id', this.value);
+        }
+    });
+    
+    scriptSelect.addEventListener('change', function() {
+        if (this.value) {
+            localStorage.setItem('placements_last_script_id', this.value);
+        }
+    });
+    
+    // Очистка сохраненных значений при успешной отправке формы
+    const form = document.getElementById('placements-form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            // Сохраняем текущие выбранные значения перед отправкой
+            if (accountSelect.value) {
+                localStorage.setItem('placements_last_account_id', accountSelect.value);
+            }
+            if (scriptSelect.value) {
+                localStorage.setItem('placements_last_script_id', scriptSelect.value);
+            }
+        });
+    }
+});
 </script>
 
