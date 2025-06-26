@@ -45,8 +45,9 @@ if ($filterDateTo) {
 }
 
 // Подсчет общего количества записей
-$countSql = str_replace("SELECT pe.*, a.name as account_name, a.timezone as account_timezone, s.name as script_name, s.description as script_description", "SELECT COUNT(*)", $sql);
-$totalRecords = $db->fetchOne($countSql, $params)['COUNT(*)'];
+$countSql = str_replace("SELECT pe.*, a.name as account_name, a.timezone as account_timezone, s.name as script_name, s.description as script_description", "SELECT COUNT(*) as total_count", $sql);
+$countResult = $db->fetchOne($countSql, $params);
+$totalRecords = $countResult['total_count'] ?? 0;
 $totalPages = ceil($totalRecords / $limit);
 
 // Добавление сортировки и лимита
