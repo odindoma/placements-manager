@@ -292,8 +292,8 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 <div class="grouped-data">
     <?php foreach ($groupedData as $campaignName => $campaignData): ?>
         <div class="campaign-group">
-            <div class="campaign-header" onclick="toggleCampaign('<?php echo md5($campaignName); ?>')">
-                <div class="campaign-info">
+            <div class="campaign-header">
+                <div class="campaign-info" onclick="toggleCampaign('<?php echo md5($campaignName); ?>')">
                     <h3>
                         <span class="toggle-icon">▼</span>
                         📊 <?php echo htmlspecialchars($campaignName); ?>
@@ -302,6 +302,12 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
                         Исключений: <?php echo $campaignData['total_exclusions']; ?> | 
                         Скриптов: <?php echo count($campaignData['scripts']); ?>
                     </span>
+                </div>
+                <div class="campaign-actions">
+                    <button type="button" class="btn btn-chart" 
+                            onclick="showCampaignCharts('<?php echo addslashes($campaignName); ?>')">
+                        📈 Графики
+                    </button>
                 </div>
             </div>
             
@@ -403,6 +409,34 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     </div>
 </div>
 
+<!-- Модальное окно для графиков -->
+<div id="charts-modal" class="modal hidden">
+    <div class="modal-content charts-modal-content">
+        <div class="modal-header">
+            <h3 id="charts-title">Аналитика кампании</h3>
+            <button class="modal-close" onclick="hideCharts()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="charts-loading" class="text-center" style="padding: 2rem;">
+                <div class="loading-spinner"></div>
+                <p>Загрузка данных для графиков...</p>
+            </div>
+            <div id="charts-content" style="display: none;">
+                <div class="charts-info" id="charts-info">
+                    <!-- Информация о периоде -->
+                </div>
+                <div class="charts-container" id="charts-container">
+                    <!-- Графики будут добавлены сюда -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Подключение Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+
 <style>
 /* Стили для группированного отображения */
 .grouped-data {
@@ -420,12 +454,20 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     padding: 1rem;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
 }
 
-.campaign-header:hover {
+.campaign-info {
+    flex: 1;
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.3s ease;
+}
+
+.campaign-info:hover {
     opacity: 0.9;
 }
 
@@ -442,6 +484,32 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     opacity: 0.9;
     margin-top: 0.25rem;
     display: block;
+}
+
+.campaign-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-chart {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.btn-chart:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
 }
 
 .campaign-content {
@@ -602,6 +670,12 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     overflow-y: auto;
 }
 
+.charts-modal-content {
+    max-width: 1200px;
+    width: 95%;
+    max-height: 90vh;
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -626,10 +700,67 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     color: #333;
 }
 
+/* Стили для графиков */
+.charts-info {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+}
+
+.charts-container {
+    display: grid;
+    gap: 2rem;
+}
+
+.chart-item {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.chart-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-canvas {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.text-center {
+    text-align: center;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
-    .campaign-header, .script-header {
-        padding: 0.75rem;
+    .campaign-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
     }
     
     .campaign-info h3 {
@@ -645,12 +776,22 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
         padding: 0.5rem;
         font-size: 0.9rem;
     }
+    
+    .charts-modal-content {
+        width: 98%;
+        max-height: 95vh;
+    }
+    
+    .chart-canvas {
+        height: 250px;
+    }
 }
 </style>
 
 <script>
 // Данные для модального окна
 const exclusionsData = <?php echo json_encode($exclusions); ?>;
+const groupedDataForCharts = <?php echo json_encode($groupedData); ?>;
 
 // Функции для сворачивания/разворачивания
 function toggleCampaign(campaignId) {
@@ -738,16 +879,308 @@ function hideDetails() {
     document.getElementById('details-modal').classList.add('hidden');
 }
 
-// Закрытие модального окна
+// Функции для работы с графиками
+let currentCharts = [];
+
+function showCampaignCharts(campaignName) {
+    // Показываем модальное окно с загрузкой
+    document.getElementById('charts-title').textContent = `Аналитика: ${campaignName}`;
+    document.getElementById('charts-loading').style.display = 'block';
+    document.getElementById('charts-content').style.display = 'none';
+    document.getElementById('charts-modal').classList.remove('hidden');
+    
+    // Очищаем предыдущие графики
+    clearCharts();
+    
+    // Симулируем загрузку и создаем графики
+    setTimeout(() => {
+        createCampaignCharts(campaignName);
+    }, 500);
+}
+
+function hideCharts() {
+    document.getElementById('charts-modal').classList.add('hidden');
+    clearCharts();
+}
+
+function clearCharts() {
+    // Уничтожаем существующие графики
+    currentCharts.forEach(chart => {
+        if (chart) chart.destroy();
+    });
+    currentCharts = [];
+}
+
+function createCampaignCharts(campaignName) {
+    // Получаем данные для кампании
+    const campaignData = exclusionsData.filter(exclusion => exclusion.campaign_name === campaignName);
+    
+    if (!campaignData.length) {
+        document.getElementById('charts-loading').style.display = 'none';
+        document.getElementById('charts-content').innerHTML = '<p>Нет данных для отображения графиков.</p>';
+        document.getElementById('charts-content').style.display = 'block';
+        return;
+    }
+    
+    // Анализируем временной диапазон
+    const dates = campaignData.map(item => new Date(item.excluded_at_gmt));
+    const minDate = new Date(Math.min(...dates));
+    const maxDate = new Date(Math.max(...dates));
+    
+    // Группируем данные по скриптам и дням
+    const scriptData = {};
+    campaignData.forEach(exclusion => {
+        const scriptName = exclusion.script_name;
+        const date = exclusion.excluded_at_gmt.split(' ')[0]; // Получаем только дату без времени
+        
+        if (!scriptData[scriptName]) {
+            scriptData[scriptName] = {};
+        }
+        
+        if (!scriptData[scriptName][date]) {
+            scriptData[scriptName][date] = 0;
+        }
+        
+        scriptData[scriptName][date]++;
+    });
+    
+    // Создаем информационный блок
+    const totalExclusions = campaignData.length;
+    const uniqueScripts = Object.keys(scriptData).length;
+    const daysDifference = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24)) + 1;
+    
+    const infoHtml = `
+        <div>
+            <h4>📊 Сводка по кампании: ${campaignName}</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                <div style="background: white; padding: 1rem; border-radius: 6px; border: 1px solid #e0e0e0;">
+                    <div style="font-size: 0.9rem; color: #6c757d;">Период</div>
+                    <div style="font-weight: 600;">${minDate.toLocaleDateString('ru-RU')} - ${maxDate.toLocaleDateString('ru-RU')}</div>
+                    <div style="font-size: 0.8rem; color: #6c757d;">${daysDifference} дн.</div>
+                </div>
+                <div style="background: white; padding: 1rem; border-radius: 6px; border: 1px solid #e0e0e0;">
+                    <div style="font-size: 0.9rem; color: #6c757d;">Всего исключений</div>
+                    <div style="font-weight: 600; font-size: 1.5rem; color: #dc3545;">${totalExclusions}</div>
+                </div>
+                <div style="background: white; padding: 1rem; border-radius: 6px; border: 1px solid #e0e0e0;">
+                    <div style="font-size: 0.9rem; color: #6c757d;">Активных скриптов</div>
+                    <div style="font-weight: 600; font-size: 1.5rem; color: #0984e3;">${uniqueScripts}</div>
+                </div>
+                <div style="background: white; padding: 1rem; border-radius: 6px; border: 1px solid #e0e0e0;">
+                    <div style="font-size: 0.9rem; color: #6c757d;">Среднее в день</div>
+                    <div style="font-weight: 600; font-size: 1.5rem; color: #00b894;">${Math.round(totalExclusions / daysDifference)}</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('charts-info').innerHTML = infoHtml;
+    
+    // Создаем контейнер для графиков
+    const chartsContainer = document.getElementById('charts-container');
+    chartsContainer.innerHTML = '';
+    
+    // Генерируем цвета для скриптов
+    const colors = [
+        '#667eea', '#764ba2', '#f093fb', '#f5576c',
+        '#4facfe', '#00f2fe', '#43e97b', '#38f9d7',
+        '#ffecd2', '#fcb69f', '#a8edea', '#fed6e3',
+        '#d299c2', '#fef9d7', '#dee2ff', '#fdf2e9'
+    ];
+    
+    // Создаем объединенный график для всех скриптов
+    const combinedChartContainer = document.createElement('div');
+    combinedChartContainer.className = 'chart-item';
+    combinedChartContainer.innerHTML = `
+        <h5 class="chart-title">📈 Общая динамика исключений по дням</h5>
+        <div class="chart-canvas">
+            <canvas id="combined-chart"></canvas>
+        </div>
+    `;
+    chartsContainer.appendChild(combinedChartContainer);
+    
+    // Подготавливаем данные для объединенного графика
+    const allDates = new Set();
+    Object.values(scriptData).forEach(dates => {
+        Object.keys(dates).forEach(date => allDates.add(date));
+    });
+    
+    const sortedDates = Array.from(allDates).sort();
+    const datasets = [];
+    
+    Object.keys(scriptData).forEach((scriptName, index) => {
+        const data = sortedDates.map(date => scriptData[scriptName][date] || 0);
+        datasets.push({
+            label: scriptName,
+            data: data,
+            borderColor: colors[index % colors.length],
+            backgroundColor: colors[index % colors.length] + '20',
+            fill: false,
+            tension: 0.4,
+            pointRadius: 4,
+            pointHoverRadius: 6
+        });
+    });
+    
+    // Создаем объединенный график
+    const combinedCtx = document.getElementById('combined-chart').getContext('2d');
+    const combinedChart = new Chart(combinedCtx, {
+        type: 'line',
+        data: {
+            labels: sortedDates.map(date => new Date(date).toLocaleDateString('ru-RU')),
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return 'Дата: ' + context[0].label;
+                        },
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y} исключений`;
+                        },
+                        footer: function(context) {
+                            const total = context.reduce((sum, item) => sum + item.parsed.y, 0);
+                            return `Всего за день: ${total} исключений`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    },
+                    title: {
+                        display: true,
+                        text: 'Количество исключений'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Дата'
+                    }
+                }
+            }
+        }
+    });
+    
+    currentCharts.push(combinedChart);
+    
+    // Создаем отдельные графики для каждого скрипта (если скриптов больше 1)
+    if (Object.keys(scriptData).length > 1) {
+        Object.keys(scriptData).forEach((scriptName, index) => {
+            const scriptChartContainer = document.createElement('div');
+            scriptChartContainer.className = 'chart-item';
+            const chartId = `script-chart-${index}`;
+            scriptChartContainer.innerHTML = `
+                <h5 class="chart-title">🔧 ${scriptName}</h5>
+                <div class="chart-canvas">
+                    <canvas id="${chartId}"></canvas>
+                </div>
+            `;
+            chartsContainer.appendChild(scriptChartContainer);
+            
+            // Подготавливаем данные для скрипта
+            const scriptDates = Object.keys(scriptData[scriptName]).sort();
+            const scriptValues = scriptDates.map(date => scriptData[scriptName][date]);
+            
+            // Создаем график для скрипта
+            const scriptCtx = document.getElementById(chartId).getContext('2d');
+            const scriptChart = new Chart(scriptCtx, {
+                type: 'bar',
+                data: {
+                    labels: scriptDates.map(date => new Date(date).toLocaleDateString('ru-RU')),
+                    datasets: [{
+                        label: 'Исключения',
+                        data: scriptValues,
+                        backgroundColor: colors[index % colors.length] + '60',
+                        borderColor: colors[index % colors.length],
+                        borderWidth: 2,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return 'Дата: ' + context[0].label;
+                                },
+                                label: function(context) {
+                                    return `Исключений: ${context.parsed.y}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            },
+                            title: {
+                                display: true,
+                                text: 'Количество исключений'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Дата'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            currentCharts.push(scriptChart);
+        });
+    }
+    
+    // Скрываем загрузку и показываем графики
+    document.getElementById('charts-loading').style.display = 'none';
+    document.getElementById('charts-content').style.display = 'block';
+}
+
+// Закрытие модальных окон
 document.getElementById('details-modal').addEventListener('click', function(e) {
     if (e.target === this) {
         hideDetails();
     }
 });
 
+document.getElementById('charts-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideCharts();
+    }
+});
+
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         hideDetails();
+        hideCharts();
     }
 });
 
