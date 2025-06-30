@@ -141,6 +141,8 @@ foreach ($exclusions as $exclusion) {
     if (!isset($groupedData[$campaignName])) {
         $groupedData[$campaignName] = [
             'campaign_name' => $campaignName,
+            'account_name' => $exclusion['account_name'],
+            'account_timezone' => $exclusion['account_timezone'],
             'scripts' => [],
             'total_exclusions' => 0
         ];
@@ -329,10 +331,16 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
                     <h3>
                         <span class="toggle-icon">▼</span>
                         📊 <?php echo htmlspecialchars($campaignName); ?>
+                        <button type="button" class="btn-copy" 
+                                onclick="event.stopPropagation(); copyCampaignName('<?php echo addslashes($campaignName); ?>')"
+                                title="Копировать название кампании">
+                            📋
+                        </button>
                     </h3>
                     <span class="campaign-stats">
                         Исключений: <?php echo $campaignData['total_exclusions']; ?> | 
-                        Скриптов: <?php echo count($campaignData['scripts']); ?>
+                        Скриптов: <?php echo count($campaignData['scripts']); ?> | 
+                        Аккаунт: <?php echo htmlspecialchars($campaignData['account_name']); ?>
                     </span>
                 </div>
                 <div class="campaign-actions">
@@ -818,6 +826,53 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
         height: 250px;
     }
 }
+.btn-copy {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-copy:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.05);
+}
+
+.btn-copy:active {
+    transform: scale(0.95);
+}
+
+.copy-success {
+    background: rgba(40, 167, 69, 0.8) !important;
+    border-color: rgba(40, 167, 69, 1) !important;
+}
+
+/* Уведомление о копировании */
+.copy-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    z-index: 2000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+.copy-notification.show {
+    transform: translateX(0);
+}
 </style>
 
 <script>
@@ -1232,4 +1287,80 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('placements_limit', this.value);
     });
 });
+
+// Функция копирования названия кампании
+function copyCampaignName(campaignName) {
+    // Используем современный Clipboard API если доступен
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(campaignName).then(() => {
+            showCopyNotification('Название кампании скопировано!');
+        }).catch(err => {
+            console.error('Ошибка копирования: ', err);
+            fallbackCopyTextToClipboard(campaignName);
+        });
+    } else {
+        // Fallback для старых браузеров
+        fallbackCopyTextToClipboard(campaignName);
+    }
+}
+
+// Fallback метод копирования для старых браузеров
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showCopyNotification('Название кампании скопировано!');
+        } else {
+            showCopyNotification('Не удалось скопировать', 'error');
+        }
+    } catch (err) {
+        console.error('Fallback: Ошибка копирования', err);
+        showCopyNotification('Ошибка копирования', 'error');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+// Показ уведомления о копировании
+function showCopyNotification(message, type = 'success') {
+    // Удаляем предыдущее уведомление если есть
+    const existingNotification = document.querySelector('.copy-notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    const notification = document.createElement('div');
+    notification.className = 'copy-notification';
+    notification.textContent = message;
+    
+    if (type === 'error') {
+        notification.style.background = '#dc3545';
+    }
+    
+    document.body.appendChild(notification);
+    
+    // Показываем уведомление
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    // Скрываем через 2 секунды
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 2000);
+}
 </script>
