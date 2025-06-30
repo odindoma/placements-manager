@@ -353,22 +353,32 @@ class Database {
     }
     
     /**
-     * Получение списка batch_id с информацией о количестве записей
+     * Получение списка batch_id с информацией о количестве записей (альтернативный вариант)
      */
-    public function getBatchList($limit = 100) {
+    public function getBatchList($limit = 10000) {
         return $this->fetchAll("
             SELECT 
-                pe.batch_id,
-                COUNT(*) as record_count,
-                MIN(pe.created_at) as first_created,
-                MAX(pe.created_at) as last_created,
+                batch_summary.batch_id,
+                batch_summary.record_count,
+                batch_summary.first_created,
+                batch_summary.last_created,
                 a.name as account_name,
                 s.name as script_name
-            FROM placement_exclusions pe
-            JOIN accounts a ON pe.account_id = a.id
-            JOIN scripts s ON pe.script_id = s.id
-            GROUP BY pe.batch_id, pe.account_id, pe.script_id
-            ORDER BY pe.created_at DESC
+            FROM (
+                SELECT 
+                    batch_id,
+                    account_id,
+                    script_id,
+                    COUNT(*) as record_count,
+                    MIN(created_at) as first_created,
+                    MAX(created_at) as last_created
+                FROM placement_exclusions 
+                WHERE batch_id IS NOT NULL AND batch_id != ''
+                GROUP BY batch_id, account_id, script_id
+            ) batch_summary
+            JOIN accounts a ON batch_summary.account_id = a.id
+            JOIN scripts s ON batch_summary.script_id = s.id
+            ORDER BY batch_summary.first_created DESC
             LIMIT ?
         ", [$limit]);
     }
