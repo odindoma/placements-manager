@@ -1,8 +1,26 @@
 <?php
+// Загружаем переменные окружения в самом начале
+require_once 'includes/EnvLoader.php';
+
+try {
+    EnvLoader::load();
+} catch (Exception $e) {
+    die("Ошибка загрузки конфигурации: " . $e->getMessage());
+}
+
+// Настройки приложения из .env
+ini_set('display_errors', EnvLoader::get('APP_DEBUG', 'false') === 'true' ? 1 : 0);
+date_default_timezone_set(EnvLoader::get('APP_TIMEZONE', 'UTC'));
+
+// Подключаем остальные файлы
 require_once 'includes/Database.php';
 
 // Инициализация базы данных
-$db = new Database();
+try {
+    $db = Database::getInstance();
+} catch (Exception $e) {
+    die("Ошибка инициализации: " . $e->getMessage());
+}
 
 // Определение текущей страницы
 $page = isset($_GET['page']) ? $_GET['page'] : 'home';

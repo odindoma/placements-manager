@@ -1,44 +1,54 @@
 <?php
-/**
- * Класс для работы с базой данных SQLite
- */
+require_once __DIR__ . '/EnvLoader.php';
+
 class Database {
     private $pdo;
-    private $dbPath;
+    private static $instance = null;
     
-    public function __construct($dbPath = 'placements.db') {
-        $this->dbPath = $dbPath;
+    public function __construct() {
+        // Загружаем .env файл
+        EnvLoader::load();
+        
         $this->connect();
-        $this->initializeDatabase();
     }
     
-    /**
-     * Подключение к базе данных
-     */
     private function connect() {
         try {
-            $this->pdo = new PDO("sqlite:" . $this->dbPath);
-            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            $host = EnvLoader::get('DB_HOST', 'localhost');
+            $port = EnvLoader::get('DB_PORT', '3306');
+            $dbname = EnvLoader::get('DB_NAME');
+            $username = EnvLoader::get('DB_USER');
+            $password = EnvLoader::get('DB_PASSWORD');
+            $charset = EnvLoader::get('DB_CHARSET', 'utf8mb4');
+            
+            if (!$dbname || !$username) {
+                throw new Exception('Database credentials not found in .env file');
+            }
+            
+            $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset={$charset}";
+            
+            $options = [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES {$charset}"
+            ];
+            
+            $this->pdo = new PDO($dsn, $username, $password, $options);
+            
         } catch (PDOException $e) {
-            die("Ошибка подключения к базе данных: " . $e->getMessage());
+            error_log("Database connection error: " . $e->getMessage());
+            throw new Exception("Ошибка подключения к базе данных");
         }
     }
     
-    /**
-     * Инициализация базы данных из SQL файла
-     */
-    private function initializeDatabase() {
-        $sqlFile = __DIR__ . '/database.sql';
-        if (file_exists($sqlFile)) {
-            $sql = file_get_contents($sqlFile);
-            $this->pdo->exec($sql);
+    public static function getInstance() {
+        if (self::$instance === null) {
+            self::$instance = new self();
         }
+        return self::$instance;
     }
     
-    /**
-     * Получение объекта PDO
-     */
     public function getPdo() {
         return $this->pdo;
     }
@@ -81,6 +91,21 @@ class Database {
     }
     
     /**
+     * Транзакции
+     */
+    public function beginTransaction() {
+        return $this->pdo->beginTransaction();
+    }
+    
+    public function commit() {
+        return $this->pdo->commit();
+    }
+    
+    public function rollback() {
+        return $this->pdo->rollback();
+    }
+    
+    /**
      * Получение всех аккаунтов
      */
     public function getAccounts() {
@@ -102,7 +127,7 @@ class Database {
      */
     public function updateAccount($id, $name, $timezone) {
         $this->query(
-            "UPDATE accounts SET name = ?, timezone = ? WHERE id = ?",
+            "UPDATE accounts SET name = ?, timezone = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
             [$name, $timezone, $id]
         );
     }
@@ -136,7 +161,7 @@ class Database {
      */
     public function updateScript($id, $name, $description) {
         $this->query(
-            "UPDATE scripts SET name = ?, description = ? WHERE id = ?",
+            "UPDATE scripts SET name = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
             [$name, $description, $id]
         );
     }
@@ -182,9 +207,9 @@ class Database {
     }
     
     /**
-     * Получение исключений плейсментов с фильтрацией
+     * Получение исключений плейсментов с фильтрацией и пагинацией
      */
-    public function getPlacementExclusions($accountId = null, $scriptId = null, $limit = 1000) {
+    public function getPlacementExclusions($accountId = null, $scriptId = null, $limit = 1000, $offset = 0) {
         $sql = "
             SELECT 
                 pe.*,
@@ -210,14 +235,15 @@ class Database {
             $params[] = $scriptId;
         }
         
-        $sql .= " ORDER BY pe.excluded_at_gmt DESC LIMIT ?";
+        $sql .= " ORDER BY pe.excluded_at_gmt DESC LIMIT ? OFFSET ?";
         $params[] = $limit;
+        $params[] = $offset;
         
         return $this->fetchAll($sql, $params);
     }
     
     /**
-     * Конвертация времени из локального часового пояса в GMT
+     * Улучшенная конвертация времени из локального часового пояса в GMT
      */
     public function convertToGMT($dateString, $timezone) {
         try {
@@ -271,7 +297,7 @@ class Database {
                 throw new Exception("Не удалось распарсить время: '" . $endedTime . "'");
             }
             
-            // Конвертируем в GMT
+            // Конвертируем в GMT для MySQL
             $date->setTimezone(new DateTimeZone('UTC'));
             
             return $date->format('Y-m-d H:i:s');
@@ -279,7 +305,6 @@ class Database {
             throw new Exception("Ошибка конвертации времени: " . $e->getMessage());
         }
     }
-
 
     /**
      * Генерация уникального batch_id
@@ -312,7 +337,7 @@ class Database {
      */
     public function updateBatchAccount($batchId, $newAccountId) {
         $this->query(
-            "UPDATE placement_exclusions SET account_id = ? WHERE batch_id = ?",
+            "UPDATE placement_exclusions SET account_id = ?, updated_at = CURRENT_TIMESTAMP WHERE batch_id = ?",
             [$newAccountId, $batchId]
         );
     }
@@ -322,7 +347,7 @@ class Database {
      */
     public function updateBatchScript($batchId, $newScriptId) {
         $this->query(
-            "UPDATE placement_exclusions SET script_id = ? WHERE batch_id = ?",
+            "UPDATE placement_exclusions SET script_id = ?, updated_at = CURRENT_TIMESTAMP WHERE batch_id = ?",
             [$newScriptId, $batchId]
         );
     }
@@ -347,5 +372,18 @@ class Database {
             LIMIT ?
         ", [$limit]);
     }
+    
+    /**
+     * Получение статистики
+     */
+    public function getStats() {
+        $stats = [];
+        
+        $stats['total_accounts'] = $this->fetchOne("SELECT COUNT(*) as count FROM accounts")['count'];
+        $stats['total_scripts'] = $this->fetchOne("SELECT COUNT(*) as count FROM scripts")['count'];
+        $stats['total_exclusions'] = $this->fetchOne("SELECT COUNT(*) as count FROM placement_exclusions")['count'];
+        $stats['today_exclusions'] = $this->fetchOne("SELECT COUNT(*) as count FROM placement_exclusions WHERE DATE(created_at) = CURDATE()")['count'];
+        
+        return $stats;
+    }
 }
-
