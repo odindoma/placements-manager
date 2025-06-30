@@ -162,6 +162,19 @@ main {
     background-color: #5a6268;
 }
 
+.btn-warning {
+    background-color: #ff9800;
+}
+
+.btn-warning:hover {
+    background-color: #e68900;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
 /* Tables */
 .table-container {
     overflow-x: auto;

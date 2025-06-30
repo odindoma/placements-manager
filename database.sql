@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS placement_exclusions (
     campaign_name VARCHAR(500) NOT NULL,
     placement_url VARCHAR(500) NOT NULL,
     excluded_at_gmt DATETIME NOT NULL,
+    batch_id VARCHAR(50) NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
     FOREIGN KEY (script_id) REFERENCES scripts(id) ON DELETE CASCADE
@@ -34,6 +35,7 @@ CREATE TABLE IF NOT EXISTS placement_exclusions (
 CREATE INDEX IF NOT EXISTS idx_placement_exclusions_account ON placement_exclusions(account_id);
 CREATE INDEX IF NOT EXISTS idx_placement_exclusions_script ON placement_exclusions(script_id);
 CREATE INDEX IF NOT EXISTS idx_placement_exclusions_date ON placement_exclusions(excluded_at_gmt);
+CREATE INDEX IF NOT EXISTS idx_placement_exclusions_batch ON placement_exclusions(batch_id);
 
 -- Вставка примерных временных зон
 INSERT OR IGNORE INTO accounts (id, name, timezone) VALUES 

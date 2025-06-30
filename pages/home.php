@@ -26,6 +26,7 @@ $recentExclusions = $db->getPlacementExclusions(null, null, 10);
         <h3>🚀 Быстрые действия</h3>
         <a href="?page=add_placements" class="btn btn-success">Добавить данные</a>
         <a href="?page=view_placements" class="btn">Просмотр данных</a>
+        <a href="?page=batch_edit" class="btn btn-warning">Массовое редактирование</a>
     </div>
     
     <div class="card">

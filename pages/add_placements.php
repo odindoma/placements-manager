@@ -64,20 +64,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Не найдено успешно исключенных плейсментов в предоставленных данных');
             }
             
-            // Сохранение данных в базу
+            // Сохранение данных в базу с проверкой на дубли
             $savedCount = 0;
+            $duplicateCount = 0;
+            
+            // Генерируем batch_id для всех записей этой пачки
+            $batchId = $db->generateBatchId();
+            
             foreach ($placements as $placement) {
-                $db->addPlacementExclusion(
+                $isAdded = $db->addPlacementExclusionSafe(
                     $accountId,
                     $scriptId,
                     $placement['campaign'],
                     $placement['placement'],
-                    $excludedAtGmt
+                    $excludedAtGmt,
+                    $batchId
                 );
-                $savedCount++;
+                
+                if ($isAdded) {
+                    $savedCount++;
+                } else {
+                    $duplicateCount++;
+                }
             }
             
-            $successMessage = "Успешно добавлено {$savedCount} исключений плейсментов";
+            // Формирование сообщения о результате
+            $messages = [];
+            if ($savedCount > 0) {
+                $messages[] = "Успешно добавлено {$savedCount} новых исключений плейсментов";
+            }
+            if ($duplicateCount > 0) {
+                $messages[] = "{$duplicateCount} записей были проигнорированы как дубли";
+            }
+            
+            $successMessage = implode('. ', $messages);
             
             // Очистка формы после успешного добавления
             $_POST = [];
