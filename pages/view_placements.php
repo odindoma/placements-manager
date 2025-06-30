@@ -76,9 +76,41 @@ $countParams = array_slice($params, 0, -1); // Убираем последний
 $countResult = $db->fetchOne($countSql, $countParams);
 $totalRecords = $countResult['total_count'] ?? 0;
 
-// Получение списков для фильтров
-$accounts = $db->getAccounts();
-$scripts = $db->getScripts();
+// Получение списков для фильтров с подсчетом исключений
+$accountsSql = "
+    SELECT 
+        a.id,
+        a.name,
+        a.timezone,
+        COALESCE(pe_count.exclusions_count, 0) as exclusions_count
+    FROM accounts a
+    LEFT JOIN (
+        SELECT 
+            account_id, 
+            COUNT(*) as exclusions_count
+        FROM placement_exclusions
+        GROUP BY account_id
+    ) pe_count ON a.id = pe_count.account_id
+    ORDER BY a.name
+";
+$accounts = $db->fetchAll($accountsSql);
+$scriptsSql = "
+    SELECT 
+        s.id,
+        s.name,
+        s.description,
+        COALESCE(pe_count.exclusions_count, 0) as exclusions_count
+    FROM scripts s
+    LEFT JOIN (
+        SELECT 
+            script_id, 
+            COUNT(*) as exclusions_count
+        FROM placement_exclusions
+        GROUP BY script_id
+    ) pe_count ON s.id = pe_count.script_id
+    ORDER BY s.name
+";
+$scripts = $db->fetchAll($scriptsSql);
 
 // Получение списка кампаний
 $campaignsSql = "
@@ -186,7 +218,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
                     <?php foreach ($accounts as $account): ?>
                         <option value="<?php echo $account['id']; ?>" 
                                 <?php echo $filterAccountId == $account['id'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($account['name']); ?>
+                            <?php echo htmlspecialchars($account['name']); ?> (<?php echo $account['exclusions_count']; ?>)
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -199,7 +231,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
                     <?php foreach ($scripts as $script): ?>
                         <option value="<?php echo $script['id']; ?>" 
                                 <?php echo $filterScriptId == $script['id'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($script['name']); ?>
+                            <?php echo htmlspecialchars($script['name']); ?> (<?php echo $script['exclusions_count']; ?>)
                         </option>
                     <?php endforeach; ?>
                 </select>
