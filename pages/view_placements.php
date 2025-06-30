@@ -329,7 +329,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             <div class="campaign-header">
                 <div class="campaign-info" onclick="toggleCampaign('<?php echo md5($campaignName); ?>')">
                     <h3>
-                        <span class="toggle-icon">▼</span>
+                        <span class="toggle-icon rotated">▼</span>
                         📊 <?php echo htmlspecialchars($campaignName); ?>
                         <button type="button" class="btn-copy" 
                                 onclick="event.stopPropagation(); copyCampaignName('<?php echo addslashes($campaignName); ?>')"
@@ -351,13 +351,13 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
                 </div>
             </div>
             
-            <div class="campaign-content" id="campaign-<?php echo md5($campaignName); ?>">
+            <div class="campaign-content collapsed" id="campaign-<?php echo md5($campaignName); ?>">
                 <?php foreach ($campaignData['scripts'] as $scriptData): ?>
                     <div class="script-group">
                         <div class="script-header" onclick="toggleScript('<?php echo md5($campaignName . $scriptData['script_id']); ?>')">
                             <div class="script-info">
                                 <h4>
-                                    <span class="toggle-icon">▼</span>
+                                    <span class="toggle-icon rotated">▼</span>
                                     🔧 <?php echo htmlspecialchars($scriptData['script_name']); ?>
                                 </h4>
                                 <span class="script-stats">
@@ -371,7 +371,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
                             </div>
                         </div>
                         
-                        <div class="script-content" id="script-<?php echo md5($campaignName . $scriptData['script_id']); ?>">
+                        <div class="script-content collapsed" id="script-<?php echo md5($campaignName . $scriptData['script_id']); ?>">
                             <div class="placements-table">
                                 <table>
                                     <thead>
