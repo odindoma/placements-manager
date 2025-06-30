@@ -130,6 +130,11 @@ foreach ($exclusions as $exclusion) {
     $groupedData[$campaignName]['total_exclusions']++;
 }
 
+// Сортировка кампаний по количеству исключений (по убыванию)
+uasort($groupedData, function($a, $b) {
+    return $b['total_exclusions'] - $a['total_exclusions'];
+});
+
 // Обработка экспорта в CSV
 if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     header('Content-Type: text/csv; charset=utf-8');
