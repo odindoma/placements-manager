@@ -94,6 +94,7 @@ $accountsSql = "
     ORDER BY a.name
 ";
 $accounts = $db->fetchAll($accountsSql);
+// Получение списка скриптов с учетом фильтров
 $scriptsSql = "
     SELECT 
         s.id,
@@ -105,21 +106,119 @@ $scriptsSql = "
         SELECT 
             script_id, 
             COUNT(*) as exclusions_count
-        FROM placement_exclusions
+        FROM placement_exclusions pe
+        WHERE 1=1
+";
+
+$scriptsParams = [];
+
+// Применяем те же фильтры, что и для основного запроса (кроме script_id)
+if ($filterAccountId) {
+    $scriptsSql .= " AND pe.account_id = ?";
+    $scriptsParams[] = $filterAccountId;
+}
+
+if ($filterCampaign) {
+    $scriptsSql .= " AND pe.campaign_name LIKE ?";
+    $scriptsParams[] = '%' . $filterCampaign . '%';
+}
+
+if ($filterPlacement) {
+    $scriptsSql .= " AND pe.placement_url LIKE ?";
+    $scriptsParams[] = '%' . $filterPlacement . '%';
+}
+
+if ($filterDateFrom) {
+    $scriptsSql .= " AND DATE(pe.excluded_at_gmt) >= ?";
+    $scriptsParams[] = $filterDateFrom;
+}
+
+if ($filterDateTo) {
+    $scriptsSql .= " AND DATE(pe.excluded_at_gmt) <= ?";
+    $scriptsParams[] = $filterDateTo;
+}
+
+$scriptsSql .= "
         GROUP BY script_id
     ) pe_count ON s.id = pe_count.script_id
     ORDER BY s.name
 ";
-$scripts = $db->fetchAll($scriptsSql);
 
-// Получение списка кампаний
+$scripts = $db->fetchAll($scriptsSql, $scriptsParams);
+
+// Получение списка кампаний с учетом фильтров
 $campaignsSql = "
     SELECT DISTINCT campaign_name, COUNT(*) as count
-    FROM placement_exclusions 
-    GROUP BY campaign_name 
-    ORDER BY campaign_name ASC
+    FROM placement_exclusions pe
+    WHERE 1=1
 ";
-$campaigns = $db->fetchAll($campaignsSql);
+
+$campaignsParams = [];
+
+if ($filterAccountId) {
+    $campaignsSql .= " AND pe.account_id = ?";
+    $campaignsParams[] = $filterAccountId;
+}
+
+if ($filterScriptId) {
+    $campaignsSql .= " AND pe.script_id = ?";
+    $campaignsParams[] = $filterScriptId;
+}
+
+if ($filterPlacement) {
+    $campaignsSql .= " AND pe.placement_url LIKE ?";
+    $campaignsParams[] = '%' . $filterPlacement . '%';
+}
+
+if ($filterDateFrom) {
+    $campaignsSql .= " AND DATE(pe.excluded_at_gmt) >= ?";
+    $campaignsParams[] = $filterDateFrom;
+}
+
+if ($filterDateTo) {
+    $campaignsSql .= " AND DATE(pe.excluded_at_gmt) <= ?";
+    $campaignsParams[] = $filterDateTo;
+}
+
+$campaignsSql .= " GROUP BY campaign_name ORDER BY campaign_name ASC";
+$campaigns = $db->fetchAll($campaignsSql, $campaignsParams);
+
+// Получение списка плейсментов с учетом фильтров
+$placementsSql = "
+    SELECT DISTINCT placement_url, COUNT(*) as count
+    FROM placement_exclusions pe
+    WHERE 1=1
+";
+
+$placementsParams = [];
+
+if ($filterAccountId) {
+    $placementsSql .= " AND pe.account_id = ?";
+    $placementsParams[] = $filterAccountId;
+}
+
+if ($filterScriptId) {
+    $placementsSql .= " AND pe.script_id = ?";
+    $placementsParams[] = $filterScriptId;
+}
+
+if ($filterCampaign) {
+    $placementsSql .= " AND pe.campaign_name LIKE ?";
+    $placementsParams[] = '%' . $filterCampaign . '%';
+}
+
+if ($filterDateFrom) {
+    $placementsSql .= " AND DATE(pe.excluded_at_gmt) >= ?";
+    $placementsParams[] = $filterDateFrom;
+}
+
+if ($filterDateTo) {
+    $placementsSql .= " AND DATE(pe.excluded_at_gmt) <= ?";
+    $placementsParams[] = $filterDateTo;
+}
+
+$placementsSql .= " GROUP BY placement_url ORDER BY count DESC, placement_url ASC LIMIT 100";
+$placements = $db->fetchAll($placementsSql, $placementsParams);
 
 // Получение списка плейсментов
 $placementsSql = "
