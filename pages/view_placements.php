@@ -386,7 +386,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
                 </select>
             </div>
             
-            <div class="filter-group">
+            <div class="filter-buttons-compact">
                 <button type="submit" class="btn">🔍 Применить</button>
                 <a href="?page=view_placements" class="btn btn-secondary">🔄 Сбросить</a>
             </div>
