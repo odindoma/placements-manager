@@ -313,7 +313,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
         
         <div class="filters-row">
             <div class="filter-group">
-                <label for="account_id">Аккаунт</label>
+                <label for="account_id">🏢 Аккаунт</label>
                 <select id="account_id" name="account_id">
                     <option value="">Все аккаунты</option>
                     <?php foreach ($accounts as $account): ?>
@@ -326,7 +326,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             </div>
             
             <div class="filter-group">
-                <label for="script_id">Скрипт</label>
+                <label for="script_id">🔧 Скрипт</label>
                 <select id="script_id" name="script_id">
                     <option value="">Все скрипты</option>
                     <?php foreach ($scripts as $script): ?>
@@ -339,7 +339,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             </div>
             
             <div class="filter-group">
-                <label for="campaign">Кампания</label>
+                <label for="campaign">📊 Кампания</label>
                 <input type="text" id="campaign" name="campaign" 
                        value="<?php echo htmlspecialchars($filterCampaign); ?>" 
                        placeholder="Поиск по кампании" list="campaigns-list">
@@ -353,7 +353,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             </div>
             
             <div class="filter-group">
-                <label for="placement">Плейсмент</label>
+                <label for="placement">🌐 Плейсмент</label>
                 <input type="text" id="placement" name="placement" 
                        value="<?php echo htmlspecialchars($filterPlacement); ?>" 
                        placeholder="Поиск по URL" list="placements-list">
@@ -367,17 +367,17 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             </div>
             
             <div class="filter-group">
-                <label for="date_from">Дата с</label>
+                <label for="date_from">📅 Дата с</label>
                 <input type="date" id="date_from" name="date_from" value="<?php echo htmlspecialchars($filterDateFrom); ?>">
             </div>
             
             <div class="filter-group">
-                <label for="date_to">Дата по</label>
+                <label for="date_to">📅 Дата по</label>
                 <input type="date" id="date_to" name="date_to" value="<?php echo htmlspecialchars($filterDateTo); ?>">
             </div>
             
             <div class="filter-group">
-                <label for="limit">Лимит записей</label>
+                <label for="limit">🔢 Лимит записей</label>
                 <select id="limit" name="limit">
                     <option value="500" <?php echo $limit == 500 ? 'selected' : ''; ?>>500</option>
                     <option value="1000" <?php echo $limit == 1000 ? 'selected' : ''; ?>>1000</option>
@@ -387,9 +387,8 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             </div>
             
             <div class="filter-group">
-                <label>&nbsp;</label>
-                <button type="submit" class="btn">Применить фильтры</button>
-                <a href="?page=view_placements" class="btn btn-secondary">Сбросить</a>
+                <button type="submit" class="btn">🔍 Применить</button>
+                <a href="?page=view_placements" class="btn btn-secondary">🔄 Сбросить</a>
             </div>
         </div>
     </form>

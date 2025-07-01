@@ -246,25 +246,347 @@ table tr:hover {
     border: 1px solid #bee5eb;
 }
 
-/* Filters */
+/* Стили для фильтров */
 .filters {
-    background-color: #f8f9fa;
-    padding: 1rem;
-    border-radius: 8px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
     margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e0e6ed;
 }
 
 .filters-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
     align-items: end;
-    flex-wrap: wrap;
 }
 
 .filter-group {
-    flex: 1;
-    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
+
+.filter-group label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.filter-group label::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    background: white;
+    color: #495057;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+}
+
+.filter-group input:hover,
+.filter-group select:hover {
+    border-color: #c5d2ea;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.filter-group input[type="date"] {
+    position: relative;
+    cursor: pointer;
+}
+
+.filter-group input[type="date"]::-webkit-calendar-picker-indicator {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 2px;
+}
+
+.filter-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23667eea' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+}
+
+.filter-group input[list] {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23667eea'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+}
+
+/* Стили для кнопок фильтров */
+.filter-group .btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.filter-group .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.filter-group .btn:not(.btn-secondary) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.filter-group .btn:not(.btn-secondary):hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46a3 100%);
+}
+
+.filter-group .btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+}
+
+.filter-group .btn-secondary:hover {
+    background: linear-gradient(135deg, #5a6268 0%, #3d4148 100%);
+}
+
+/* Улучшенные стили для карточки статистики */
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e0e6ed;
+    margin-bottom: 2rem;
+}
+
+.card h3 {
+    color: #2d3748;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card h3::before {
+    content: "📊";
+    font-size: 1.2rem;
+}
+
+.card p {
+    margin-bottom: 0.5rem;
+    color: #4a5568;
+}
+
+.card p strong {
+    color: #2d3748;
+    font-weight: 700;
+}
+
+/* Улучшенные кнопки в карточке статистики */
+.card .btn {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card .btn-secondary {
+    background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+    color: white;
+}
+
+.card .btn-secondary:hover {
+    background: linear-gradient(135deg, #63707e 0%, #3d4148 100%);
+}
+
+.card .btn-success {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+}
+
+.card .btn-success:hover {
+    background: linear-gradient(135deg, #3aa86a 0%, #2f855a 100%);
+}
+
+/* Добавляем иконки к кнопкам */
+.card .btn-secondary:first-of-type::before {
+    content: "📂";
+}
+
+.card .btn-secondary:nth-of-type(2)::before {
+    content: "📁";
+}
+
+.card .btn-success::before {
+    content: "💾";
+}
+
+/* Улучшенная анимация загрузки */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.filter-group input:disabled,
+.filter-group select:disabled {
+    background: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+    animation: pulse 2s infinite;
+}
+
+/* Стили для подсказок в полях */
+.filter-group input::placeholder {
+    color: #a0aec0;
+    font-style: italic;
+}
+
+/* Адаптивные улучшения */
+@media (max-width: 768px) {
+    .filters {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .filters-row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .filter-group input,
+    .filter-group select {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    
+    .filter-group .btn {
+        padding: 0.65rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .filters-row {
+        gap: 0.5rem;
+    }
+    
+    .filter-group {
+        gap: 0.25rem;
+    }
+    
+    .filter-group label {
+        font-size: 0.8rem;
+    }
+    
+    .filter-group input,
+    .filter-group select {
+        padding: 0.5rem 0.6rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* Анимация появления фильтров */
+.filters {
+    animation: slideInDown 0.6s ease;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Дополнительные улучшения для лучшего UX */
+.filter-group input[type="text"]:focus,
+.filter-group input[type="date"]:focus {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+}
+
+.filter-group select:focus {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+}
+
+/* Стили для валидации */
+.filter-group input:invalid {
+    border-color: #e53e3e;
+    box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+}
+
+.filter-group input:valid {
+    border-color: #38a169;
+}
+
+/* Улучшенные стили для datalist */
+.filter-group datalist {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
 
 /* Footer */
 footer {
