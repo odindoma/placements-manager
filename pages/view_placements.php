@@ -469,53 +469,88 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
                             </div>
                         </div>
                         
-                        <div class="script-content collapsed" id="script-<?php echo md5($campaignName . $scriptData['script_id']); ?>">
-                            <div class="placements-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th width="20%">Дата/время (GMT)</th>
-                                            <th width="50%">Плейсмент</th>
-                                            <th width="20%">Аккаунт</th>
-                                            <th width="10%">Действия</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($scriptData['placements'] as $placement): ?>
-                                            <tr>
-                                                <td>
-                                                    <div class="datetime">
-                                                        <?php echo date('d.m.Y', strtotime($placement['excluded_at_gmt'])); ?>
-                                                    </div>
-                                                    <div class="time">
-                                                        <?php echo date('H:i:s', strtotime($placement['excluded_at_gmt'])); ?>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <a href="http://<?php echo htmlspecialchars($placement['placement_url']); ?>" 
-                                                       target="_blank" 
-                                                       class="placement-link">
-                                                        <?php echo htmlspecialchars($placement['placement_url']); ?>
-                                                    </a>
-                                                </td>
-                                                <td>
-                                                    <div class="account-info">
-                                                        <?php echo htmlspecialchars($placement['account_name']); ?>
-                                                        <small><?php echo htmlspecialchars($placement['account_timezone']); ?></small>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <button class="btn btn-secondary btn-sm" 
-                                                            onclick="showDetails(<?php echo $placement['id']; ?>)">
-                                                        Детали
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+<div class="script-content collapsed" id="script-<?php echo md5($campaignName . $scriptData['script_id']); ?>">
+    <div class="placements-container">
+        <?php
+        // Группируем плейсменты по дням
+        $placementsByDay = [];
+        foreach ($scriptData['placements'] as $placement) {
+            $date = date('Y-m-d', strtotime($placement['excluded_at_gmt']));
+            $dateFormatted = date('d.m.Y', strtotime($placement['excluded_at_gmt']));
+            
+            if (!isset($placementsByDay[$date])) {
+                $placementsByDay[$date] = [
+                    'date' => $date,
+                    'formatted_date' => $dateFormatted,
+                    'placements' => [],
+                    'count' => 0
+                ];
+            }
+            
+            $placementsByDay[$date]['placements'][] = $placement;
+            $placementsByDay[$date]['count']++;
+        }
+        
+        // Сортируем дни по убыванию (новые сверху)
+        krsort($placementsByDay);
+        ?>
+        
+        <?php foreach ($placementsByDay as $dayData): ?>
+            <div class="day-group">
+                <div class="day-header" onclick="toggleDay('<?php echo md5($campaignName . $scriptData['script_id'] . $dayData['date']); ?>')">
+                    <div class="day-info">
+                        <h5>
+                            <span class="toggle-icon rotated">▼</span>
+                            📅 <?php echo $dayData['formatted_date']; ?>
+                        </h5>
+                        <span class="day-stats">
+                            Исключений: <?php echo $dayData['count']; ?>
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="day-content collapsed" id="day-<?php echo md5($campaignName . $scriptData['script_id'] . $dayData['date']); ?>">
+                    <div class="placements-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th width="15%">Время (GMT)</th>
+                                    <th width="75%">Плейсмент</th>
+                                    <th width="10%">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($dayData['placements'] as $placement): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="time-only">
+                                                <?php echo date('H:i:s', strtotime($placement['excluded_at_gmt'])); ?>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <a href="http://<?php echo htmlspecialchars($placement['placement_url']); ?>" 
+                                               target="_blank" 
+                                               class="placement-link">
+                                                <?php echo htmlspecialchars($placement['placement_url']); ?>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-secondary btn-sm" 
+                                                    onclick="showDetails(<?php echo $placement['id']; ?>)">
+                                                Детали
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -1006,7 +1041,7 @@ function toggleScript(scriptId) {
 }
 
 function expandAll() {
-    document.querySelectorAll('.campaign-content, .script-content').forEach(content => {
+    document.querySelectorAll('.campaign-content, .script-content, .day-content').forEach(content => {
         content.classList.remove('collapsed');
     });
     document.querySelectorAll('.toggle-icon').forEach(icon => {
@@ -1015,13 +1050,28 @@ function expandAll() {
 }
 
 function collapseAll() {
-    document.querySelectorAll('.campaign-content, .script-content').forEach(content => {
+    document.querySelectorAll('.campaign-content, .script-content, .day-content').forEach(content => {
         content.classList.add('collapsed');
     });
     document.querySelectorAll('.toggle-icon').forEach(icon => {
         icon.classList.add('rotated');
     });
 }
+
+// Функция для сворачивания/разворачивания дней
+function toggleDay(dayId) {
+    const content = document.getElementById('day-' + dayId);
+    const icon = content.previousElementSibling.querySelector('.toggle-icon');
+    
+    if (content.classList.contains('collapsed')) {
+        content.classList.remove('collapsed');
+        icon.classList.remove('rotated');
+    } else {
+        content.classList.add('collapsed');
+        icon.classList.add('rotated');
+    }
+}
+
 
 // Показ деталей
 function showDetails(exclusionId) {

@@ -688,3 +688,218 @@ footer {
     pointer-events: none;
 }
 
+/* Стили для группировки по дням */
+.placements-container {
+    padding: 0;
+}
+
+.day-group {
+    margin-bottom: 0.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: white;
+}
+
+.day-header {
+    background: linear-gradient(135deg, #e8f4fd 0%, #b8e6ff 100%);
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #d1ecf1;
+}
+
+.day-header:hover {
+    background: linear-gradient(135deg, #d4edda 0%, #a8e6cf 100%);
+    transform: translateX(2px);
+}
+
+.day-info h5 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #155724;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.day-stats {
+    font-size: 0.8rem;
+    color: #0c5460;
+    margin-top: 0.25rem;
+    display: block;
+    font-weight: 500;
+}
+
+.day-content {
+    display: block;
+    background: #fafbfc;
+}
+
+.day-content.collapsed {
+    display: none;
+}
+
+/* Обновленные стили для таблицы плейсментов */
+.placements-table {
+    padding: 0;
+    margin: 0;
+}
+
+.placements-table table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    background: white;
+}
+
+.placements-table th {
+    padding: 0.75rem;
+    text-align: left;
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 0.85rem;
+}
+
+.placements-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: top;
+}
+
+.placements-table tr:hover {
+    background-color: #f1f8ff;
+}
+
+.placements-table tr:last-child td {
+    border-bottom: none;
+}
+
+.time-only {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+    font-family: 'Courier New', monospace;
+    background: #e3f2fd;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-align: center;
+    display: inline-block;
+    min-width: 70px;
+}
+
+.placement-link {
+    color: #4285f4;
+    text-decoration: none;
+    word-break: break-all;
+    line-height: 1.4;
+    display: block;
+    padding: 0.25rem 0;
+}
+
+.placement-link:hover {
+    text-decoration: underline;
+    background: rgba(66, 133, 244, 0.05);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin: -0.25rem -0.5rem;
+}
+
+/* Стили для кнопки деталей */
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+/* Улучшенная анимация для иконок сворачивания дней */
+.day-header .toggle-icon {
+    transition: transform 0.3s ease;
+    font-size: 0.8rem;
+    color: #0c5460;
+}
+
+.day-header .toggle-icon.rotated {
+    transform: rotate(-90deg);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .day-header {
+        padding: 0.6rem 0.8rem;
+    }
+    
+    .day-info h5 {
+        font-size: 0.85rem;
+    }
+    
+    .day-stats {
+        font-size: 0.75rem;
+    }
+    
+    .placements-table th,
+    .placements-table td {
+        padding: 0.5rem 0.4rem;
+        font-size: 0.8rem;
+    }
+    
+    .time-only {
+        font-size: 0.75rem;
+        min-width: 60px;
+        padding: 0.2rem 0.3rem;
+    }
+    
+    .btn-sm {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .placements-table th:first-child,
+    .placements-table td:first-child {
+        width: 20%;
+    }
+    
+    .placements-table th:nth-child(2),
+    .placements-table td:nth-child(2) {
+        width: 65%;
+    }
+    
+    .placements-table th:last-child,
+    .placements-table td:last-child {
+        width: 15%;
+    }
+    
+    .time-only {
+        font-size: 0.7rem;
+        min-width: 50px;
+    }
+}
+
+/* Стиль для пустых дней */
+.day-group:empty {
+    display: none;
+}
+
+/* Анимация появления групп дней */
+.day-group {
+    animation: slideInLeft 0.3s ease;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
